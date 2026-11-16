@@ -1,0 +1,23 @@
+name = "TagConsent"
+client_id = "REPLACE_WITH_YOUR_SHOPIFY_APP_CLIENT_ID"
+
+[access_scopes]
+scopes = "read_themes,write_themes,read_script_tags,write_script_tags"
+
+[auth]
+redirect_urls = [ "https://your-app-url.com/auth/callback" ]
+
+[webhooks]
+api_version = "2024-01"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks/app/uninstalled"
+
+[app_proxy]
+url = "https://your-app-url.com"
+subpath = "tagconsent"
+prefix = "apps"
+
+[pos]
+embedded = false

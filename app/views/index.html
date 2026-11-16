@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TagConsent - DPDP Consent Management</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f6f6f7; color: #202223; }
+        .app-header { background: #fff; border-bottom: 1px solid #e1e3e5; padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+        .app-header img { height: 32px; }
+        .app-header h1 { font-size: 20px; font-weight: 600; }
+        .app-header .badge { background: #f26522; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+        .container { max-width: 900px; margin: 24px auto; padding: 0 24px; }
+        .card { background: #fff; border: 1px solid #e1e3e5; border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+        .card h2 { font-size: 16px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid #f26522; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-weight: 500; margin-bottom: 4px; font-size: 14px; }
+        .form-group .description { font-size: 12px; color: #6d7175; margin-top: 2px; }
+        input[type="text"], input[type="url"], select {
+            width: 100%; padding: 8px 12px; border: 1px solid #c9cccf; border-radius: 6px; font-size: 14px;
+        }
+        input:focus, select:focus { outline: none; border-color: #f26522; box-shadow: 0 0 0 2px rgba(242,101,34,0.15); }
+        .btn { padding: 8px 20px; border-radius: 6px; font-size: 14px; font-weight: 500; cursor: pointer; border: 1px solid transparent; }
+        .btn-primary { background: #f26522; color: #fff; }
+        .btn-primary:hover { background: #d4571d; }
+        .btn-secondary { background: #fff; border-color: #c9cccf; color: #202223; }
+        .btn-secondary:hover { background: #f6f6f7; }
+        .status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 500; }
+        .status-ok { background: #aee9d1; color: #0d5035; }
+        .status-error { background: #fed3d1; color: #611b16; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .toggle { display: flex; align-items: center; gap: 8px; }
+        .toggle input[type="checkbox"] { width: 40px; height: 22px; appearance: none; background: #c9cccf; border-radius: 11px; position: relative; cursor: pointer; transition: background 0.2s; }
+        .toggle input[type="checkbox"]::after { content: ''; width: 18px; height: 18px; background: #fff; border-radius: 50%; position: absolute; top: 2px; left: 2px; transition: left 0.2s; }
+        .toggle input[type="checkbox"]:checked { background: #f26522; }
+        .toggle input[type="checkbox"]:checked::after { left: 20px; }
+        .compliance-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .compliance-table th { text-align: left; padding: 8px; background: #f6f6f7; border-bottom: 2px solid #e1e3e5; }
+        .compliance-table td { padding: 8px; border-bottom: 1px solid #e1e3e5; }
+        #status-msg { margin-top: 12px; padding: 8px 12px; border-radius: 6px; display: none; font-size: 13px; }
+        .msg-success { background: #aee9d1; color: #0d5035; display: block !important; }
+        .msg-error { background: #fed3d1; color: #611b16; display: block !important; }
+    </style>
+</head>
+<body>
+    <div class="app-header">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="16" fill="#f26522"/><text x="16" y="21" text-anchor="middle" fill="#fff" font-size="14" font-weight="bold">TC</text></svg>
+        <h1>TagConsent</h1>
+        <span class="badge">DPDP</span>
+    </div>
+
+    <div class="container">
+        <div class="card">
+            <h2>Connection</h2>
+            <div id="connection-status" style="margin-bottom:12px">
+                <span class="status status-error">Not configured</span>
+            </div>
+            <div class="form-group">
+                <label for="api-key">TagConsent API Key</label>
+                <input type="text" id="api-key" placeholder="tc_cms_...">
+                <div class="description">Get this from TagConsent Dashboard → CMS Integrations → Create Installation (Shopify)</div>
+            </div>
+            <div class="form-group">
+                <label for="domain-id">Domain ID</label>
+                <input type="text" id="domain-id" placeholder="UUID from TagConsent">
+                <div class="description">Found in TagConsent Dashboard → Domains → your domain</div>
+            </div>
+            <div style="display:flex;gap:8px">
+                <button class="btn btn-primary" onclick="saveSettings()">Save</button>
+                <button class="btn btn-secondary" onclick="testConnection()">Test Connection</button>
+            </div>
+            <div id="status-msg"></div>
+        </div>
+
+        <div class="card">
+            <h2>Banner Configuration</h2>
+            <div class="grid-2">
+                <div class="form-group">
+                    <label for="banner-position">Position</label>
+                    <select id="banner-position">
+                        <option value="bottom">Bottom Bar</option>
+                        <option value="top">Top Bar</option>
+                        <option value="bottom-left">Bottom Left Popup</option>
+                        <option value="bottom-right">Bottom Right Popup</option>
+                        <option value="center">Centre Modal</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="banner-theme">Theme</label>
+                    <select id="banner-theme">
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                        <option value="auto">Auto (match store)</option>
+                    </select>
+                </div>
+            </div>
+            <div class="toggle" style="margin-bottom:12px">
+                <input type="checkbox" id="auto-block" checked>
+                <label for="auto-block">Auto-block non-essential cookies until consent</label>
+            </div>
+            <div class="toggle">
+                <input type="checkbox" id="gcm-enabled" checked>
+                <label for="gcm-enabled">Enable Google Consent Mode v2</label>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>DPDP Act 2023 Compliance</h2>
+            <table class="compliance-table">
+                <thead><tr><th>Obligation</th><th>Section</th><th>Status</th></tr></thead>
+                <tbody>
+                    <tr><td>Informed consent before processing</td><td>§6</td><td>✅ Cookie banner</td></tr>
+                    <tr><td>Notice with purpose of processing</td><td>§5</td><td>✅ Category descriptions</td></tr>
+                    <tr><td>Withdrawal of consent</td><td>§6(4)</td><td>✅ Preference centre</td></tr>
+                    <tr><td>Children's data consent</td><td>§9</td><td>✅ Age gate support</td></tr>
+                    <tr><td>Cookie transparency</td><td>§5, §6</td><td>✅ Cookie declaration</td></tr>
+                    <tr><td>Google Consent Mode v2</td><td>—</td><td>✅ Automatic GCM defaults</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>Theme Integration</h2>
+            <p style="margin-bottom:12px">The TagConsent script is automatically injected via Shopify Script Tags. For manual integration or additional customisation, add this to your <code>theme.liquid</code> inside <code>&lt;head&gt;</code>:</p>
+            <pre style="background:#f6f6f7;padding:12px;border-radius:6px;font-size:13px;overflow-x:auto">&lt;script&gt;
+  window.tagconsentConfig = {
+    apiKey: '<span id="snippet-key">YOUR_API_KEY</span>',
+    endpoint: 'https://tagconsent.com',
+    platform: 'shopify'
+  };
+&lt;/script&gt;
+&lt;script src="https://tagconsent.com/api/dpdp/cms/loader.js" async&gt;&lt;/script&gt;</pre>
+        </div>
+
+        <div class="card" style="text-align:center;padding:24px">
+            <p>View full analytics, consent logs, and compliance reports in your</p>
+            <a href="https://tagconsent.com/app" target="_blank" class="btn btn-primary" style="margin-top:8px;display:inline-block;text-decoration:none">Open TagConsent Dashboard ↗</a>
+        </div>
+    </div>
+
+    <script>
+        const shop = new URLSearchParams(window.location.search).get('shop') || '';
+
+        async function loadSettings() {
+            try {
+                const r = await fetch('/api/settings?shop=' + shop);
+                if (!r.ok) return;
+                const s = await r.json();
+                document.getElementById('api-key').value = s.apiKey || '';
+                document.getElementById('domain-id').value = s.domainId || '';
+                document.getElementById('banner-position').value = s.bannerPosition || 'bottom';
+                document.getElementById('banner-theme').value = s.bannerTheme || 'light';
+                document.getElementById('auto-block').checked = s.autoBlock !== false;
+                document.getElementById('gcm-enabled').checked = s.gcmEnabled !== false;
+                if (s.apiKey) {
+                    document.getElementById('connection-status').innerHTML = '<span class="status status-ok">Connected</span>';
+                    document.getElementById('snippet-key').textContent = s.apiKey;
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function saveSettings() {
+            const data = {
+                shop,
+                apiKey: document.getElementById('api-key').value,
+                domainId: document.getElementById('domain-id').value,
+                bannerPosition: document.getElementById('banner-position').value,
+                bannerTheme: document.getElementById('banner-theme').value,
+                autoBlock: document.getElementById('auto-block').checked,
+                gcmEnabled: document.getElementById('gcm-enabled').checked
+            };
+            try {
+                const r = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const res = await r.json();
+                const msg = document.getElementById('status-msg');
+                if (res.success) {
+                    msg.className = 'msg-success';
+                    msg.textContent = 'Settings saved successfully!';
+                    document.getElementById('connection-status').innerHTML = '<span class="status status-ok">Connected</span>';
+                    document.getElementById('snippet-key').textContent = data.apiKey;
+                } else {
+                    msg.className = 'msg-error';
+                    msg.textContent = 'Failed to save: ' + (res.error || 'Unknown error');
+                }
+                msg.style.display = 'block';
+                setTimeout(() => msg.style.display = 'none', 3000);
+            } catch (e) {
+                alert('Error saving settings');
+            }
+        }
+
+        async function testConnection() {
+            const apiKey = document.getElementById('api-key').value;
+            if (!apiKey) { alert('Enter an API key first'); return; }
+            const msg = document.getElementById('status-msg');
+            msg.className = '';
+            msg.textContent = 'Testing...';
+            msg.style.display = 'block';
+            try {
+                const r = await fetch('/api/test-connection', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ apiKey })
+                });
+                const res = await r.json();
+                if (res.success) {
+                    msg.className = 'msg-success';
+                    msg.textContent = 'Connection successful! TagConsent is properly configured.';
+                    document.getElementById('connection-status').innerHTML = '<span class="status status-ok">Connected</span>';
+                } else {
+                    msg.className = 'msg-error';
+                    msg.textContent = 'Connection failed: ' + (res.error || 'Invalid API key');
+                }
+            } catch (e) {
+                msg.className = 'msg-error';
+                msg.textContent = 'Network error — cannot reach server';
+            }
+        }
+
+        loadSettings();
+    </script>
+</body>
+</html>

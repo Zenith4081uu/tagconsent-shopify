@@ -1,0 +1,115 @@
+{% comment %}
+  TagConsent DPDP Consent Banner - Shopify Theme App Extension
+  Injects the TagConsent consent banner with Google Consent Mode v2 defaults.
+{% endcomment %}
+
+{% if block.settings.enabled %}
+  {%- comment -%} GCM v2 defaults — must fire before any gtag/GTM {%- endcomment -%}
+  {% if block.settings.gcm_enabled %}
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('consent', 'default', {
+      'ad_storage': 'denied',
+      'ad_user_data': 'denied',
+      'ad_personalization': 'denied',
+      'analytics_storage': 'denied',
+      'functionality_storage': 'denied',
+      'personalization_storage': 'denied',
+      'security_storage': 'granted',
+      'wait_for_update': 500
+    });
+    gtag('set', 'ads_data_redaction', true);
+    gtag('set', 'url_passthrough', true);
+  </script>
+  {% endif %}
+
+  {%- comment -%} TagConsent loader config {%- endcomment -%}
+  <script>
+    window.tagconsentConfig = {
+      apiKey: {{ block.settings.api_key | json }},
+      domainId: {{ block.settings.domain_id | json }},
+      endpoint: {{ block.settings.endpoint | json }},
+      platform: 'shopify',
+      banner: {
+        position: {{ block.settings.banner_position | json }},
+        theme: {{ block.settings.banner_theme | json }}
+      },
+      autoBlock: {{ block.settings.auto_block | json }},
+      gcmEnabled: {{ block.settings.gcm_enabled | json }}
+    };
+  </script>
+  <script src="{{ block.settings.endpoint }}/api/dpdp/cms/loader.js" async></script>
+
+  {%- comment -%} Banner mount point {%- endcomment -%}
+  <div id="tagconsent-root"></div>
+{% endif %}
+
+{% schema %}
+{
+  "name": "TagConsent Banner",
+  "target": "head",
+  "settings": [
+    {
+      "type": "checkbox",
+      "id": "enabled",
+      "label": "Enable consent banner",
+      "default": true
+    },
+    {
+      "type": "text",
+      "id": "api_key",
+      "label": "TagConsent API Key",
+      "info": "From TagConsent Dashboard → CMS Integrations"
+    },
+    {
+      "type": "text",
+      "id": "domain_id",
+      "label": "Domain ID",
+      "info": "From TagConsent Dashboard → Domains"
+    },
+    {
+      "type": "text",
+      "id": "endpoint",
+      "label": "TagConsent Endpoint",
+      "default": "https://tagconsent.com"
+    },
+    {
+      "type": "select",
+      "id": "banner_position",
+      "label": "Banner Position",
+      "options": [
+        { "value": "bottom", "label": "Bottom Bar" },
+        { "value": "top", "label": "Top Bar" },
+        { "value": "bottom-left", "label": "Bottom Left" },
+        { "value": "bottom-right", "label": "Bottom Right" },
+        { "value": "center", "label": "Centre Modal" }
+      ],
+      "default": "bottom"
+    },
+    {
+      "type": "select",
+      "id": "banner_theme",
+      "label": "Banner Theme",
+      "options": [
+        { "value": "light", "label": "Light" },
+        { "value": "dark", "label": "Dark" },
+        { "value": "auto", "label": "Auto" }
+      ],
+      "default": "light"
+    },
+    {
+      "type": "checkbox",
+      "id": "auto_block",
+      "label": "Auto-block non-essential cookies",
+      "default": true
+    },
+    {
+      "type": "checkbox",
+      "id": "gcm_enabled",
+      "label": "Enable Google Consent Mode v2",
+      "default": true
+    }
+  ]
+}
+{% endschema %}
